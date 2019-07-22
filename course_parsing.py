@@ -27,13 +27,17 @@ def get_courses():
 
         if not code:
             code = 'SHS'
+        specializations = c.find('div', {'class', 'specialisation'})
+        specs = []
+        for s in specializations.findAll('img'):
+            specs.append(s['src'].split('.gif')[0][-1])
 
         lower_name = name.replace(' ', '').lower()
-        courses[lower_name] = (name, credits, code)
+        courses[lower_name] = (name, credits, code, specs)
 
     # Edge cases
-    courses['dynamicalsystemtheoryforengineersexercices:travailindividuelouengroupenonplanifiéàl\'horaire'] = ('Dynamical system theory for engineers', 4, 'COM-502')
-    courses['machinelearningthefirstcourse(september18)willtakeplaceintheforumofrolexlearningcenter'] = ('Machine learning', 7, 'CS-433')
+    courses['dynamicalsystemtheoryforengineersexercices:travailindividuelouengroupenonplanifiéàl\'horaire'] = ('Dynamical system theory for engineers', 4, 'COM-502', [])
+    courses['machinelearningthefirstcourse(september18)willtakeplaceintheforumofrolexlearningcenter'] = ('Machine learning', 7, 'CS-433', ['b', 'f', 'i', 'j'])
 
     return courses
 
@@ -58,6 +62,7 @@ class Course:
         self.teacher      = teacher
         self.credits      = int(course[1])
         self.code         = course[2]
+        self.specs        = course[3]
 
     def get_hour(self):
         start = self.start // 100 - 8
@@ -103,6 +108,8 @@ def parse_timetable(name):
             # Edge case (m1_2019.pdf)
             if c_name == 'MachinelearningThefirstweek,courseswilltakeplaceintheForumofRolexLearningCenter':
                 c_name = 'Machinelearning'
+            if c_name == 'Moderndigitalcommunications:ahands-on':
+                c_name = 'moderndigitalcommunications:ahands-onapproach'
 
             isLecture = temp[0][-1] == 'C'
 

@@ -87,6 +87,10 @@ class CourseButton(QPushButton):
         info = f'-- {c.code} / {c.name} -- {c.credits} credits\n'
         info += f'Teacher : {c.teacher}\n'
         info += 'Is a core course' if c.isObligatory else 'Is an optional course'
+        if c.specs:
+            info += ', counting for specialization(s): '
+            for s in c.specs:
+                info += s.upper() + ' '
         info_box.setText(info)
 
 # COURSE LIST
