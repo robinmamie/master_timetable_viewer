@@ -13,7 +13,7 @@ To launch the program, please type the following in a terminal:
 
 Todo:
 
-* Specify the specializations
+* Add specializations
 * Allow the user to choose the semester (currently set to `m1_2019.pdf`)
 * Count all credits selected
 * Allow change between semester while saving credits & timetables
