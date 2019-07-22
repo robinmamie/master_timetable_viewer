@@ -5,6 +5,10 @@ It displays all necessary informations (timetable, credits, etc.)
 
 Currently only available for the Computer Science EPFL Master.
 
+To launch the program, please type the following in a terminal:
+
+    python app.py
+
 ## Roadmap
 
 Todo:
