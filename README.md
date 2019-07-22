@@ -15,5 +15,6 @@ Todo:
 
 * Allow the user to choose the semester (currently set to `m1_2019.pdf`)
 * Allow change between semester while saving credits & timetables
+* Implement an automatic conflict resolver
 * Take minors into account(?) -> would build the path for other masters
 * Choose which master to look at, alternatively specify the link of the study plans
