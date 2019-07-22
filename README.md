@@ -13,7 +13,6 @@ To launch the program, please type the following in a terminal:
 
 Todo:
 
-* Count all credits selected
 * Allow the user to choose the semester (currently set to `m1_2019.pdf`)
 * Allow change between semester while saving credits & timetables
 * Choose which Master to look at, alternatively specify the link of the study plans
