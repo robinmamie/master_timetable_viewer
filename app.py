@@ -1,8 +1,6 @@
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QPushButton, QVBoxLayout, QGridLayout, QScrollArea, QTableWidget, QTableWidgetItem, QAbstractScrollArea, QTextEdit
+from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QPushButton, QVBoxLayout, QGridLayout, QScrollArea, QTableWidget, QTableWidgetItem, QAbstractScrollArea, QTextEdit, QTabWidget
 from course_parsing import parse_timetable
 from sys import exit
-
-pdf_source = 'm1_2019.pdf'
 
 app = QApplication(['Master Timetable Viewer'])
 
@@ -36,17 +34,21 @@ c_tally = {
 
 # Create data table
 days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
-data_l = []
-hours = ['Time']
-for i in range(8,19):
-    hours.append(f'{i:02}:15-\n{i+1:02}:00')
-data_l.append(hours)
-for d in days:
-    l = [d]
-    for i in range(11):
-        l.append("")
-    data_l.append(l)
-data = dict([(d[0], d[1:]) for d in data_l])
+data = []
+for i in range(8):
+    data_l = []
+    hours = ['Time']
+    for i in range(8,19):
+        hours.append(f'{i:02}:15-\n{i+1:02}:00')
+    data_l.append(hours)
+    for d in days:
+        l = [d]
+        for i in range(11):
+            l.append("")
+        data_l.append(l)
+    data_u = dict([(d[0], d[1:]) for d in data_l])
+    data.append(data_u)
+
 
 
 # TIMETABLE
@@ -55,14 +57,15 @@ class TableView(QTableWidget):
     def __init__(self, data, *args):
         QTableWidget.__init__(self, *args)
         self.data = data
-        self.setData()
+        self.setData(0)
         self.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
 
-    def setData(self):
+    def setData(self, index):
         horHeaders = []
-        for n, key in enumerate(self.data.keys()):
+        data = self.data[index]
+        for n, key in enumerate(data.keys()):
             horHeaders.append(key)
-            for m, item in enumerate(self.data[key]):
+            for m, item in enumerate(data[key]):
                 newitem = QTableWidgetItem(item)
                 self.setItem(m, n, newitem)
         self.setHorizontalHeaderLabels(horHeaders)
@@ -70,13 +73,13 @@ class TableView(QTableWidget):
         self.resizeRowsToContents()
 
 w_table = TableView(data, 11, 6)
-w_credits = TableView(c_tally, 2, 14)
+w_credits = TableView([c_tally], 2, 14)
 
 
 # COURSES
 # Course Button
 class CourseButton(QPushButton):
-    def __init__(self, course, table):
+    def __init__(self, course, table, index):
         name = course[0].name
         if course[0].isObligatory:
             name = '* ' + name
@@ -84,6 +87,7 @@ class CourseButton(QPushButton):
         self.name = name
         self.course = course
         self.table = table
+        self.index = index
         self.setCheckable(True)
         self.toggled.connect(self.handle_course)
 
@@ -100,10 +104,10 @@ class CourseButton(QPushButton):
                 specific_title += '(lec)' if c.isLecture else '(ex)'
                 specific_title += '\n'
                 if self.isChecked():
-                    data[day][hour] += specific_title
+                    data[self.index][day][hour] += specific_title
                 else:
-                    data[day][hour] = data[day][hour].replace(specific_title, "")
-        self.table.setData()
+                    data[self.index][day][hour] = data[self.index][day][hour].replace(specific_title, "")
+        self.table.setData(self.index)
 
         # Display Information
         c = self.course[0]
@@ -131,7 +135,7 @@ class CourseButton(QPushButton):
                 add_credits('opt')
             for s in c.specs:
                 add_credits(s)
-        w_credits.setData()
+        w_credits.setData(0)
 
 
 
@@ -139,25 +143,36 @@ class CourseButton(QPushButton):
 # COURSE LIST
 # TODO implement line breaks in buttons?
 # Course list Widget
-w_course_list = QWidget()
+w_course_list = QTabWidget()
 # Course list Scroll
 s_course_list = QScrollArea()
 s_course_list.setWidget(w_course_list)
 s_course_list.setWidgetResizable(True)
 s_course_list.setFixedHeight(750)
 s_course_list.setFixedWidth(600)
-# Course list Layout
-l_course_list = QVBoxLayout(w_course_list)
-l_course_list.addStretch()
+# Course tabs
+def tab_change(i):
+    w_table.setData(i)
+w_course_list.currentChanged.connect(tab_change)
 
-# Course parsing & buttons
-courses = parse_timetable(pdf_source)
-buttons = []
-for c in courses:
-    buttons.append(CourseButton(c, w_table))
-buttons.sort(key=lambda b: b.name)
-for b in buttons:
-    l_course_list.addWidget(b)
+
+for i in range(8):
+    # Course list Layout
+    w_cl = QWidget()
+    w_course_list.addTab(w_cl, f'M{i+1}')
+    l_course_list = QVBoxLayout(w_cl)
+    w_cl.setLayout(l_course_list)
+    l_course_list.addStretch()
+
+    # Course parsing & buttons
+    pdf_source = f'm{(i%2)+1}_2019.pdf'
+    courses = parse_timetable(pdf_source)
+    buttons = []
+    for c in courses:
+        buttons.append(CourseButton(c, w_table, i))
+    buttons.sort(key=lambda b: b.name)
+    for b in buttons:
+        l_course_list.addWidget(b)
 
 
 l_main.addWidget(s_course_list, 1, 0)

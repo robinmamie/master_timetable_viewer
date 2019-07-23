@@ -52,7 +52,7 @@ course_dict = get_courses()
 class Course:
 
     def __init__(self, name, day, start, end, isLecture, isObligatory, teacher):
-        course            = course_dict.get(name.lower(), (name, 0, None))
+        course            = course_dict.get(name, (name, 0, None))
         self.name         = course[0].strip()
         self.day          = int(day)
         self.start        = int(start)
@@ -107,19 +107,21 @@ def parse_timetable(name):
             c_name = temp[1] if len(temp) > 1 else 'HSS:introductiontoproject'
             # Edge case (m1_2019.pdf)
             if c_name == 'MachinelearningThefirstweek,courseswilltakeplaceintheForumofRolexLearningCenter':
-                c_name = 'Machinelearning'
+                c_name = 'machinelearning'
             if c_name == 'Moderndigitalcommunications:ahands-on':
                 c_name = 'moderndigitalcommunications:ahands-onapproach'
 
-            isLecture = temp[0][-1] == 'C'
+            c_name = c_name.lower()
+            if course_dict.get(c_name):
+                isLecture = temp[0][-1] == 'C'
 
-            isObligatory = True
-            obl = re.search('OPT|OBL', slot)
-            if obl:
-                isObligatory = obl[0] == 'OBL'
+                isObligatory = True
+                obl = re.search('OPT|OBL', slot)
+                if obl:
+                    isObligatory = obl[0] == 'OBL'
 
-            c = Course(c_name, d, hours[0], hours[1], isLecture, isObligatory, teacher)
-            slots.append(c)
+                c = Course(c_name, d, hours[0], hours[1], isLecture, isObligatory, teacher)
+                slots.append(c)
 
     courses = []
     for s in slots:
