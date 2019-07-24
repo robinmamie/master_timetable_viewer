@@ -38,6 +38,11 @@ def get_courses():
     # Edge cases
     courses['dynamicalsystemtheoryforengineersexercices:travailindividuelouengroupenonplanifiéàl\'horaire'] = ('Dynamical system theory for engineers', 4, 'COM-502', [])
     courses['machinelearningthefirstcourse(september18)willtakeplaceintheforumofrolexlearningcenter'] = ('Machine learning', 7, 'CS-433', ['b', 'f', 'i', 'j'])
+    # Manuel entries, but are already present. Used to change the name.
+    # They are not present in the PDF, since it acts as a timetable.
+    courses['pdm'] = ('Master Project', 30, 'CS-599', [])
+    courses['spro'] = ('Semester Project', 12, 'CS-498', [])
+    courses['opro'] = ('Optional Project', 8, 'CS-596', [])
 
     return courses
 
@@ -134,4 +139,8 @@ def parse_timetable(name):
         if not added:
             courses.append([s])
 
+    # Add manual entries of projects
+    courses.append([Course('pdm', -1, -1, -1, False, False, 'None')])
+    courses.append([Course('spro', -1, -1, -1, False, False, 'None')])
+    courses.append([Course('opro', -1, -1, -1, False, False, 'None')])
     return courses

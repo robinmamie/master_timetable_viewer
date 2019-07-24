@@ -13,7 +13,7 @@ To launch the program, please type the following in a terminal:
 
 Todo:
 
-* Add semester projects and MP
+- Show credits per semester (on tab name?)
 * Add constraints (no double semester project, etc)
 * Implement an automatic conflict resolver
 * Take minors into account(?) -> would build the path for other masters

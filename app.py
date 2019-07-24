@@ -16,9 +16,10 @@ info_box.setReadOnly(True)
 
 # Credit tally
 c_tally = {
-        'tot': ['0', '90 (78/70)'],
+        'tot': ['0', '120'],
+        'pdm': ['0', '30'],
         'obl': ['0', '30'],
-        'opt': ['0', '-'],
+        'pro': ['0', '12'],
         'shs': ['0', '6'],
         'a': ['0', '30'],
         'b': ['0', '30'],
@@ -73,7 +74,7 @@ class TableView(QTableWidget):
         self.resizeRowsToContents()
 
 w_table = TableView(data, 11, 6)
-w_credits = TableView([c_tally], 2, 14)
+w_credits = TableView([c_tally], 2, 15)
 
 
 # COURSES
@@ -81,7 +82,10 @@ w_credits = TableView([c_tally], 2, 14)
 class CourseButton(QPushButton):
     def __init__(self, course, table, index):
         name = course[0].name
-        if course[0].isObligatory:
+        self.isProject = name == 'Master Project' or name == 'Semester Project' or name == 'Optional Project'
+        if self.isProject:
+            name = '# ' + name
+        elif course[0].isObligatory:
             name = '* ' + name
         QPushButton.__init__(self, name)
         self.name = name
@@ -94,26 +98,27 @@ class CourseButton(QPushButton):
     def handle_course(self):
 
         # Display Course
-        for c in self.course:
-            day = days[c.day]
-            title = f'{self.name} '
-            start = c.start // 100 - 8
-            end = c.end // 100 - 8
-            for hour in range(start, end):
-                specific_title = title
-                specific_title += '(lec)' if c.isLecture else '(ex)'
-                specific_title += '\n'
-                if self.isChecked():
-                    data[self.index][day][hour] += specific_title
-                else:
-                    data[self.index][day][hour] = data[self.index][day][hour].replace(specific_title, "")
-        self.table.setData(self.index)
+        if not self.isProject:
+            for c in self.course:
+                day = days[c.day]
+                title = f'{self.name} '
+                start = c.start // 100 - 8
+                end = c.end // 100 - 8
+                for hour in range(start, end):
+                    specific_title = title
+                    specific_title += '(lec)' if c.isLecture else '(ex)'
+                    specific_title += '\n'
+                    if self.isChecked():
+                        data[self.index][day][hour] += specific_title
+                    else:
+                        data[self.index][day][hour] = data[self.index][day][hour].replace(specific_title, "")
+            self.table.setData(self.index)
 
         # Display Information
         c = self.course[0]
         info = f'-- {c.code} / {c.name} -- {c.credits} credits\n'
         info += f'Teacher : {c.teacher}\n'
-        info += 'Is a core course' if c.isObligatory else 'Is an optional course'
+        info += 'Is a project' if self.isProject else 'Is a core course' if c.isObligatory else 'Is an optional course'
         if c.specs:
             info += ', counting for specialization(s): '
             for s in c.specs:
@@ -131,8 +136,10 @@ class CourseButton(QPushButton):
         else:
             if c.isObligatory:
                 add_credits('obl')
-            else:
-                add_credits('opt')
+            elif 'master project' in c.name.lower():
+                add_credits('pdm')
+            elif 'project' in c.name.lower():
+                add_credits('pro')
             for s in c.specs:
                 add_credits(s)
         w_credits.setData(0)
