@@ -1,6 +1,7 @@
 from bs4 import BeautifulSoup
+import pickle
 from PyPDF2 import PdfFileReader
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QPushButton, QVBoxLayout, QGridLayout, QScrollArea, QTableWidget, QTableWidgetItem, QAbstractScrollArea, QTextEdit, QTabWidget
+from PyQt5.QtWidgets import QAction, QApplication, QMainWindow, QWidget, QPushButton, QVBoxLayout, QGridLayout, QScrollArea, QTableWidget, QTableWidgetItem, QAbstractScrollArea, QTextEdit, QTabWidget
 import re
 from sys import exit
 from urllib.request import urlopen
@@ -76,7 +77,9 @@ def fetch_online_study_plan():
 
     return courses
 
+
 course_dict = fetch_online_study_plan()
+
 
 class Course:
 
@@ -318,8 +321,6 @@ class CourseButton(QPushButton):
         self.credit_table.setData(0)
 
 
-
-
 class CourseList(QScrollArea):
 
     def __init__(self, timetable, info_box, credit_table):
@@ -328,7 +329,7 @@ class CourseList(QScrollArea):
         self.setWidget(course_list_widget)
         self.setWidgetResizable(True)
         # TODO remove hardcoded numbers
-        self.setFixedHeight(750)
+        self.setFixedHeight(720)
         self.setFixedWidth(600)
         self.init_tabs(course_list_widget, timetable, info_box, credit_table)
 
@@ -340,6 +341,7 @@ class CourseList(QScrollArea):
 
         courses = [parse_timetable(M1_FILE), parse_timetable(M2_FILE)]
 
+        # TODO factorize the 8
         for i in range(8):
             # Course list Layout
             w_cl = QWidget()
@@ -357,7 +359,6 @@ class CourseList(QScrollArea):
             buttons.sort(key=lambda b: b.name)
             for b in buttons:
                 l_course_list.addWidget(b)
-
 
 
 class TimetableViewer(QMainWindow):
@@ -382,6 +383,38 @@ class TimetableViewer(QMainWindow):
         main_layout.addWidget(timetable, 1, 1)
         main_layout.addWidget(info_box, 2, 0)
         main_layout.addWidget(credit_table, 2, 1)
+
+        menu_bar = self.menuBar()
+        file_menu = menu_bar.addMenu('&File')
+
+        # TODO also restore button & courses state!
+        def save_call():
+            with open('timetable.sav', 'wb') as fp:
+                pickle.dump(timetable.data, fp)
+            with open('credits.sav', 'wb') as fp:
+                pickle.dump(credit_table.data, fp)
+
+        save_action = QAction('&Save', self)
+        save_action.setShortcut('Ctrl+S')
+        save_action.setStatusTip('Save current choice')
+        save_action.triggered.connect(save_call)
+
+        def load_call():
+            with open('timetable.sav', 'rb') as fp:
+                timetable.data = pickle.load(fp)
+            with open('credits.sav', 'rb') as fp:
+                credit_table.data = pickle.load(fp)
+            for i in range(8):
+                timetable.setData(i)
+            credit_table.setData(0)
+
+        load_action = QAction('&Load', self)
+        load_action.setShortcut('Ctrl+L')
+        load_action.setStatusTip('Load saved choice')
+        load_action.triggered.connect(load_call)
+        
+        file_menu.addAction(save_action)
+        file_menu.addAction(load_action)
 
 
 def main():

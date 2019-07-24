@@ -19,6 +19,13 @@ Then, please type the following in a terminal:
 
     python master_timetable_viewer.py
 
+## Known issues
+
+The course "Information Security and Privacy" is displayed both as a fall and spring semester course, and can be selected in 2 semesters (if they are not during the same part of the year), which should not happen.
+Starting from the second half of 2019, the course is given during the fall semester and not during the spring one as previously.
+Since the program bases itself on previous semesters' timetables, it cannot take it into account.
+Please ignore the course during the spring semesters (even numbered semesters in this case).
+
 ## Roadmap
 
 Todo:
