@@ -17,13 +17,13 @@ To launch the program, verify that the following python packages are installed:
 
 Then, please type the following in a terminal:
 
-    python timetable_viewer.py
+    python master_timetable_viewer.py
 
 ## Roadmap
 
 Todo:
 
-* Add constraints (no double semester project, etc)
+* Add more constraints (no PDM when more than 8 credits, etc)
 * Save feature
 * Offer offline HTML page of study plans
 * Implement an automatic conflict resolver

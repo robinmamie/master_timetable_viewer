@@ -92,6 +92,7 @@ class Course:
         self.credits      = int(course[1])
         self.code         = course[2]
         self.specs        = course[3]
+        self.isAlreadyChosen = False
 
     def get_hour(self):
         start = self.start // 100 - 8
@@ -238,6 +239,7 @@ class Timetable(TableView):
 
 
 class CourseButton(QPushButton):
+
     def __init__(self, course, index, timetable, info_box, credit_table):
         name = course[0].name
         self.isProject = name == 'Master Project' or name == 'Semester Project' or name == 'Optional Project'
@@ -254,8 +256,15 @@ class CourseButton(QPushButton):
         self.info_box = info_box
         self.credit_table = credit_table
         self.toggled.connect(self.handle_course)
+        self.manual_toggle = False
 
     def handle_course(self):
+
+        if self.manual_toggle or (self.isChecked() and self.course[0].isAlreadyChosen):
+            self.setDown(False)
+            self.manual_toggle = not self.manual_toggle
+            return
+        self.course[0].isAlreadyChosen = self.isChecked()
 
         # Display Course
         if not self.isProject:
