@@ -32,6 +32,8 @@ c_tally = {
         'i': ['0', '30'],
         'j': ['0', '30']
     }
+for i in range(1,9):
+    c_tally[f'M{i}'] = ['0', '-']
 
 # Create data table
 days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
@@ -74,7 +76,7 @@ class TableView(QTableWidget):
         self.resizeRowsToContents()
 
 w_table = TableView(data, 11, 6)
-w_credits = TableView([c_tally], 2, 15)
+w_credits = TableView([c_tally], 2, 23)
 
 
 # COURSES
@@ -131,6 +133,7 @@ class CourseButton(QPushButton):
             c_tally[name][0] = str(int(c_tally[name][0]) + cred)
 
         add_credits('tot')
+        add_credits(f'M{self.index+1}')
         if 'HSS' in c.name:
             add_credits('shs')
         else:
