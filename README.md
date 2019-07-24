@@ -5,9 +5,19 @@ It displays all necessary informations (timetable, credits, etc.)
 
 Currently only available for the computer science EPFL master.
 
-To launch the program, please type the following in a terminal:
+## Launch
 
-    python app.py
+
+To launch the program, verify that the following python packages are installed:
+
+* PyQt5, used for the graphical interface;
+* urllib, used to retrieve the study plan from the Internet;
+* bs4, used to parse the retrieved study plan;
+* PyPDF2, used to parse the pdf timetables.
+
+Then, please type the following in a terminal:
+
+    python timetable_viewer.py
 
 ## Roadmap
 

@@ -1,8 +1,176 @@
+from bs4 import BeautifulSoup
+from PyPDF2 import PdfFileReader
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QPushButton, QVBoxLayout, QGridLayout, QScrollArea, QTableWidget, QTableWidgetItem, QAbstractScrollArea, QTextEdit, QTabWidget
-from course_parsing import parse_timetable
+import re
 from sys import exit
+from urllib.request import urlopen
 
-days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+
+## CONSTANTS ##
+
+PROGRAM_NAME = 'Master Timetable Viewer'
+"""Name of the program."""
+
+M1_FILE = 'm1_2019.pdf'
+"""Link to the fall semester timetable."""
+
+M2_FILE = 'm2_2019.pdf'
+"""Link to the spring semester timetable."""
+
+LINK_CS = 'https://edu.epfl.ch/studyplan/en/master/computer-science'
+"""Link to the study plan."""
+
+WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+"""List of the weekdays' English names."""
+
+RE_HOUR = '[0-9]{2}:[0-9]{2}'
+"""Regular expression used to retrieved the hour from the pdf timetable."""
+
+PFX_TEACHER = 'Enseignant-e-(s):'
+"""Prefix to all teachers' names in the pdf timetable."""
+
+
+## BACKEND ##
+
+def fetch_online_study_plan():
+    """
+    Fetches the online information about the study plans.
+
+    Returns a quadruple withname, credits, course code and specializations.
+    """
+    page_source  = urlopen(LINK_CS).read()
+    soup         = BeautifulSoup(page_source, 'html.parser')
+    main_content = soup.find('body').find('div', {'id': 'main-content'})
+    content      = main_content.find('div', {'id': 'content'})
+
+    courses = {}
+
+    for c in content.findAll('div', {'class', 'line-down'}):
+        course_name = c.find('div', {'class', 'cours-name'})
+        name        = course_name.string
+        if not name:
+            name = course_name.find('a').string
+
+        credits = c.find('div', {'class', 'credit-time'}).string
+
+        code    = c.find('div', {'class', 'cours-code'}).string.strip()
+
+        if not code:
+            code = 'SHS'
+        specializations = c.find('div', {'class', 'specialisation'})
+        specs = []
+        for s in specializations.findAll('img'):
+            specs.append(s['src'].split('.gif')[0][-1])
+
+        lower_name = name.replace(' ', '').lower()
+        courses[lower_name] = (name, credits, code, specs)
+
+    # Edge cases
+    courses['dynamicalsystemtheoryforengineersexercices:travailindividuelouengroupenonplanifiéàl\'horaire'] = ('Dynamical system theory for engineers', 4, 'COM-502', [])
+    courses['machinelearningthefirstcourse(september18)willtakeplaceintheforumofrolexlearningcenter'] = ('Machine learning', 7, 'CS-433', ['b', 'f', 'i', 'j'])
+    # Manual entries, but they are already present. Used to change the name.
+    # They are not present in the PDF, since it acts as a timetable.
+    courses['pdm'] = ('Master Project', 30, 'CS-599', [])
+    courses['spro'] = ('Semester Project', 12, 'CS-498', [])
+    courses['opro'] = ('Optional Project', 8, 'CS-596', [])
+
+    return courses
+
+course_dict = fetch_online_study_plan()
+
+class Course:
+
+    def __init__(self, name, day, start, end, isLecture, isObligatory, teacher):
+        course            = course_dict.get(name, (name, 0, None))
+        self.name         = course[0].strip()
+        self.day          = int(day)
+        self.start        = int(start)
+        self.end          = int(end)
+        self.isLecture    = bool(isLecture)
+        self.isObligatory = bool(isObligatory)
+        self.teacher      = teacher
+        self.credits      = int(course[1])
+        self.code         = course[2]
+        self.specs        = course[3]
+
+    def get_hour(self):
+        start = self.start // 100 - 8
+        end   = self.end // 100 - 8
+        return range(start, end)
+
+    def __str__(self):
+
+        def time(time):
+            return f'{time//100:02}:{time%100:02}'
+
+        lec = 'lecture session' if self.isLecture else 'exercise/project session'
+        obl = 'obligatory' if self.isObligatory else 'optional'
+
+        return f'''{self.code} / {self.name}, {self.teacher} ({self.credits} credits): {WEEKDAYS[self.day]} {time(self.start)}-{time(self.end)}, is an {obl} {lec}'''
+
+
+def extract_timetable(name):
+
+    pdf_reader = PdfFileReader(open(name, 'rb'))
+    pdf_text   = [pdf_reader.getPage(i).extractText() for i in range(pdf_reader.getNumPages())]
+
+    raw_text   = ''.join(pdf_text).replace('\n','')
+    days       = re.split('LUNDI|MARDI|MERCREDI|JEUDI|VENDREDI', raw_text)[1:]
+
+    return [re.split(f'(?={RE_HOUR}-)', day)[1:] for day in days]
+
+
+def parse_timetable(name):
+    week = extract_timetable(name)
+    slots = []
+
+    # TODO SHS breaks everything...
+    for day, d in zip(week, range(len(week))):
+        for slot in day:
+            hours = re.search(f'{RE_HOUR}-{RE_HOUR}', slot)[0].replace(':', '').split('-')
+
+            temp = slot.split(PFX_TEACHER)
+            teacher = re.sub(r'(\w)([A-Z])', r'\1 \2', temp[1]) if len(temp) > 1 else None
+
+            temp = re.split('OPT|OBL', temp[0])
+            c_name = temp[1] if len(temp) > 1 else 'HSS:introductiontoproject'
+            # Edge case (m1_2019.pdf)
+            if c_name == 'MachinelearningThefirstweek,courseswilltakeplaceintheForumofRolexLearningCenter':
+                c_name = 'machinelearning'
+            if c_name == 'Moderndigitalcommunications:ahands-on':
+                c_name = 'moderndigitalcommunications:ahands-onapproach'
+
+            c_name = c_name.lower()
+            if course_dict.get(c_name):
+                isLecture = temp[0][-1] == 'C'
+
+                isObligatory = True
+                obl = re.search('OPT|OBL', slot)
+                if obl:
+                    isObligatory = obl[0] == 'OBL'
+
+                c = Course(c_name, d, hours[0], hours[1], isLecture, isObligatory, teacher)
+                slots.append(c)
+
+    courses = []
+    for s in slots:
+        added = False
+        for c in courses:
+            if s.name == c[0].name:
+                c.append(s)
+                added = True
+                break
+        if not added:
+            courses.append([s])
+
+    # Add manual entries of projects
+    courses.append([Course('pdm', -1, -1, -1, False, False, 'None')])
+    courses.append([Course('spro', -1, -1, -1, False, False, 'None')])
+    courses.append([Course('opro', -1, -1, -1, False, False, 'None')])
+    return courses
+
+
+## FRONTEND ##
 
 class CourseInfoBox(QTextEdit):
 
@@ -12,8 +180,9 @@ class CourseInfoBox(QTextEdit):
 
 
 class TableView(QTableWidget):
+
     def __init__(self, data, *args):
-        QTableWidget.__init__(self, *args)
+        super().__init__(*args)
         self.data = data
         self.setData(0)
         self.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
@@ -58,7 +227,7 @@ class Timetable(TableView):
             for i in range(8,19):
                 hours.append(f'{i:02}:15-\n{i+1:02}:00')
             data_l.append(hours)
-            for d in days:
+            for d in WEEKDAYS:
                 l = [d]
                 for i in range(11):
                     l.append("")
@@ -76,7 +245,7 @@ class CourseButton(QPushButton):
             name = '# ' + name
         elif course[0].isObligatory:
             name = '* ' + name
-        QPushButton.__init__(self, name)
+        super().__init__(name)
         self.name = name
         self.course = course
         self.index = index
@@ -91,7 +260,7 @@ class CourseButton(QPushButton):
         # Display Course
         if not self.isProject:
             for c in self.course:
-                day = days[c.day]
+                day = WEEKDAYS[c.day]
                 title = f'{self.name} '
                 start = c.start // 100 - 8
                 end = c.end // 100 - 8
@@ -160,6 +329,7 @@ class CourseList(QScrollArea):
             timetable.setData(i)
         tabs.currentChanged.connect(tab_change)
 
+        courses = [parse_timetable(M1_FILE), parse_timetable(M2_FILE)]
 
         for i in range(8):
             # Course list Layout
@@ -170,10 +340,9 @@ class CourseList(QScrollArea):
             l_course_list.addStretch()
 
             # Course parsing & buttons
-            pdf_source = f'm{(i%2)+1}_2019.pdf'
-            courses = parse_timetable(pdf_source)
+            courses_current = courses[i%2]
             buttons = []
-            for c in courses:
+            for c in courses_current:
                 button = CourseButton(c, i, timetable, info_box, credit_table)
                 buttons.append(button)
             buttons.sort(key=lambda b: b.name)
@@ -206,17 +375,8 @@ class TimetableViewer(QMainWindow):
         main_layout.addWidget(credit_table, 2, 1)
 
 
-
-
-
-# COURSES
-# Course Button
-
-
-
-
 def main():
-    app = QApplication(['Master Timetable Viewer'])
+    app = QApplication([PROGRAM_NAME])
     window = TimetableViewer()
     window.show()
     exit(app.exec_())
