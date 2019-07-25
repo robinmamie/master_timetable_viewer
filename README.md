@@ -7,7 +7,6 @@ Currently only available for the computer science EPFL master.
 
 ## Launch
 
-
 To launch the program, verify that the following python packages are installed:
 
 * PyQt5, used for the graphical interface;
@@ -18,6 +17,16 @@ To launch the program, verify that the following python packages are installed:
 Then, please type the following in a terminal:
 
     python master_timetable_viewer.py
+
+## Installer
+
+With pyinstaller, you can create an executable (along with its source files) using the makefile:
+
+    make
+
+To create only one (massive!) file, please use:
+
+    make compact
 
 ## Known issues
 
