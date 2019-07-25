@@ -18,7 +18,7 @@ Then, please type the following in a terminal:
 
     python master_timetable_viewer.py
 
-## Installer
+## Create an executable
 
 With pyinstaller, you can create an executable (along with its source files) using the makefile:
 
