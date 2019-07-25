@@ -35,6 +35,9 @@ Starting from the second half of 2019, the course is given during the fall semes
 Since the program bases itself on previous semesters' timetables, it cannot take it into account.
 Please ignore the course during the spring semesters (even numbered semesters in this case).
 
+Courses not present in the current semester for one reason or another (e.g. Data Visualization is not given during the fall semester 2019) are not shown in any semester.
+But one can edit the tables manually to force its entry.
+
 ## Roadmap
 
 Todo:
@@ -45,3 +48,7 @@ Todo:
 * Implement an automatic conflict resolver
 * Take minors into account(?) -> would build the path for other masters
 * Choose which master to look at, alternatively specify the link of the study plans
+
+## Contact
+
+Please contact me via email (<robin.mamie@epfl.ch>) to report any bug and/or request.
