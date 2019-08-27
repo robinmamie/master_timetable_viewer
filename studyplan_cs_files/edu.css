@@ -1,0 +1,26 @@
+body {
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: none;
+    background: url('/images/bkg.png') no-repeat;
+}
+
+ul.study_plan_list > li {
+    list-style: none;
+    margin-left: 5px;
+}
+
+ul#breadcrumbs > li.truncate {
+    width: 250px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.content_one_col {
+    margin-right: 4px;
+    margin-bottom: 20px;
+    border-top: 1px solid #000;
+    padding-top: 0;
+    min-height: 400px;
+    width: 980px;
+}
